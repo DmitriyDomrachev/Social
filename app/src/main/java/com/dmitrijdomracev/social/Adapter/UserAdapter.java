@@ -46,6 +46,12 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             Glide.with(mContext).load(user.getImageURL()).into(holder.profileImageIV);
         }
 
+        if (user.getStatus().equals("online")) {
+            holder.statusIV.setVisibility(View.VISIBLE);
+        } else {
+            holder.statusIV.setVisibility(View.GONE);
+        }
+
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -66,6 +72,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
         public TextView userNameTV;
         public ImageView profileImageIV;
+        public ImageView statusIV;
 
 
         public ViewHolder(View itemView) {
@@ -73,6 +80,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
             userNameTV = itemView.findViewById(R.id.username);
             profileImageIV = itemView.findViewById(R.id.profile_image);
+            statusIV = itemView.findViewById(R.id.onlineIV);
 
         }
     }
