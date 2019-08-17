@@ -1,6 +1,5 @@
 package com.dmitrijdomracev.social.Fragment;
 
-import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
@@ -9,12 +8,13 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +24,7 @@ import com.dmitrijdomracev.social.R;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -38,23 +39,25 @@ import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 import static android.app.Activity.RESULT_OK;
-import static android.content.Context.POWER_SERVICE;
 
 
 public class ProfileFragment extends Fragment {
 
     CircleImageView profileImage;
     TextView usernameTV;
+    ProgressBar progressBar;
+
 
     FirebaseUser firebaseUser;
     DatabaseReference databaseReference;
 
     StorageReference storageReference;
-    StorageTask uploadTast;
+    StorageTask uploadTask;
     private static final int REQUEST_IMAGE = 1;
     private Uri imageUri;
 
@@ -67,6 +70,7 @@ public class ProfileFragment extends Fragment {
 
         profileImage = view.findViewById(R.id.profile_image);
         usernameTV = view.findViewById(R.id.username);
+        progressBar = view.findViewById(R.id.progressBar);
 
         storageReference = FirebaseStorage.getInstance().getReference("uploads");
 
@@ -119,20 +123,19 @@ public class ProfileFragment extends Fragment {
         return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri));
     }
 
+
     private void uploadImage() {
         Log.d(TAG, "upload start");
-        final ProgressDialog dialog = new ProgressDialog(getContext());
-        dialog.setMessage("Uploading");
-        dialog.show();
+        showProgress();
         if (imageUri != null) {
-            final StorageReference fileReference = storageReference
+          final StorageReference fileReference = storageReference
                     .child(System.currentTimeMillis() + "." + getFileExtension(imageUri));
             Log.d(TAG, "get reference");
 
-            uploadTast = fileReference.putFile(imageUri);
+            uploadTask = fileReference.putFile(imageUri);
             Log.d(TAG, "put file");
 
-            uploadTast.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
                 @Override
                 public Task<Uri> then(@NonNull Task task) throws Exception {
                     if (!task.isSuccessful()) {
@@ -153,18 +156,18 @@ public class ProfileFragment extends Fragment {
                         map.put("imageURL", mUri);
                         databaseReference.updateChildren(map);
 
-                        dialog.dismiss();
+                        hideProgress();
 
                     } else {
                         Toast.makeText(getContext(), "Failed!", Toast.LENGTH_SHORT).show();
-                        dialog.dismiss();
+                        hideProgress();
                     }
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
                     Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
+                    hideProgress();
 
                 }
             });
@@ -182,7 +185,7 @@ public class ProfileFragment extends Fragment {
         if (requestCode == REQUEST_IMAGE && resultCode == RESULT_OK && data != null && data.getData() != null) {
             imageUri = data.getData();
             Log.d(TAG, "on Result imageUri = " + imageUri);
-            if (uploadTast != null && uploadTast.isInProgress()) {
+            if (uploadTask != null && uploadTask.isInProgress()) {
                 Toast.makeText(getContext(), "Upload is progress!", Toast.LENGTH_SHORT).show();
             } else {
                 uploadImage();
@@ -191,6 +194,21 @@ public class ProfileFragment extends Fragment {
 
 
     }
+
+
+
+    private void showProgress() {
+        progressBar.setVisibility(View.VISIBLE);
+        Objects.requireNonNull(getActivity()).getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+    }
+
+    private void hideProgress() {
+        progressBar.setVisibility(View.GONE);
+        Objects.requireNonNull(getActivity()).getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+
+    }
+
 
 }
 

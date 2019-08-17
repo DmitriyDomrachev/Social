@@ -9,9 +9,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import com.dmitrijdomracev.social.Adapter.UserAdapter;
 import com.dmitrijdomracev.social.Model.User;
@@ -22,6 +25,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -31,6 +35,8 @@ public class UsersFragment extends Fragment {
     private RecyclerView recyclerView;
     private UserAdapter userAdapter;
     private List<User> mUsers;
+
+    private EditText searchET;
 
 
     @Override
@@ -43,9 +49,61 @@ public class UsersFragment extends Fragment {
 
         mUsers = new ArrayList<>();
 
+        searchET = view.findViewById(R.id.searchET);
+        searchET.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchUser(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
         readUsers();
 
         return view;
+    }
+
+    private void searchUser(String s) {
+        final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        Query query = FirebaseDatabase.getInstance().getReference("Users")
+                .orderByChild("username")
+                .startAt(s)
+                .endAt(s + "\uf8ff");
+
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mUsers.clear();
+                for (DataSnapshot dataSnapshot1 : dataSnapshot.getChildren()) {
+                    User user = dataSnapshot1.getValue(User.class);
+
+                    assert user != null;
+                    assert firebaseUser != null;
+
+                    if (!user.getId().equals(firebaseUser.getUid())) {
+                        mUsers.add(user);
+                    }
+                }
+
+                userAdapter = new UserAdapter(getContext(), mUsers);
+                recyclerView.setAdapter(userAdapter);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
     }
 
     private void readUsers() {
@@ -56,26 +114,33 @@ public class UsersFragment extends Fragment {
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                mUsers.clear();
+                if (searchET.getText().toString().equals("")) {
+                    mUsers.clear();
 
-                for (DataSnapshot snapshot: dataSnapshot.getChildren()){
-                    User user = snapshot.getValue(User.class);
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        User user = snapshot.getValue(User.class);
 
-                    assert user != null;
-                    assert firebaseUser != null;
+                        assert user != null;
+                        assert firebaseUser != null;
 
-                    if (!user.getId().equals(firebaseUser.getUid())){
-                        mUsers.add(user);
+                        if (!user.getId().equals(firebaseUser.getUid())) {
+                            mUsers.add(user);
+                        }
                     }
+                    userAdapter = new UserAdapter(getContext(), mUsers);
+                    recyclerView.setAdapter(userAdapter);
                 }
-                userAdapter = new UserAdapter(getContext(), mUsers);
-                recyclerView.setAdapter(userAdapter);
+
+                else  {
+                    searchUser(searchET.getText().toString());
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
+
         });
     }
 

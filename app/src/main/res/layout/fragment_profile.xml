@@ -6,6 +6,7 @@
     tools:context=".Fragment.ProfileFragment">
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/cardview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="8dp">
@@ -16,6 +17,7 @@
             android:padding="8dp">
 
             <TextView
+                android:id="@+id/head_text"
                 android:layout_height="wrap_content"
                 android:layout_width="wrap_content"
                 android:text="Profile"
@@ -23,9 +25,9 @@
                 android:textColor="@color/colorPrimaryDark"/>
             
             <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/profile_image"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
-                android:id="@+id/profile_image"
                 android:layout_centerHorizontal="true"
                 android:layout_marginTop="32dp"
                 android:src="@mipmap/ic_launcher"/>
@@ -45,5 +47,14 @@
         </RelativeLayout>
 
     </androidx.cardview.widget.CardView>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"
+        />
 
 </RelativeLayout>
